@@ -1,8 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-4.3.xsd
+		http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
 	
-	<!-- Root Context: defines shared resources visible to all other web components -->
+	<aop:aspectj-autoproxy />
+	<!-- 스프링 AOP 자동 프록시 설정 -->
+	
+	<!-- Spring JDBC -->
+	<bean id="dataSource"
+		  class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		  
+		  <property name="driverClassName" value="oracle.jdbc.OracleDriver" />
+		  <property name="url" value="jdbc:oracle:thin:@127.0.0.1:1521:xe" />
+		  <property name="username" value="night" />
+		  <property name="password" value="123456" />	  
+	</bean>	
+	
+	<!-- 스프링과 mybatis연결, mybatis-config.xml 파일 설정(데이터저장빈 클래스 객체 별칭이름을  관리),
+	mybatis 매퍼태그 xml 설정(sql문을 별도로 관리) -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<!-- setter() 메서드를 통한 의존성 주입. ref bean id dataSource를 호출하면서 mybatis에서
+		스프링을 통한 오라클 연결 -->
 		
+		<property name="configLocation" value="classpath:/mybatis-config.xml" />
+		<!-- classpath경로는 STS 가상경로에서는 src/main/resources 가 된다. -->
+		
+		<property name="mapperLocations" value="classpath:net/daum/mappers/*/*.xml" />
+		<!-- SQL문을 별도로 관리하는 mybatis 매퍼 xml태그 경로 -->
+	</bean>	
+	
+	<!-- 스프링 트랜잭션 매니져(트랜잭션 관리자) 설정 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+			<property name="dataSource" ref="dataSource" />
+			<!-- setter() 메서드를 통한 의존성 주입(DI), ref 빈아이디 dataSource를 호출해서
+			오라클을 연결한다. -->
+		</bean>
+		<tx:annotation-driven/> <!-- 트랜잭션 설정 애노테이션 => @Transactional를 통한
+		 트랜잭션 관리가 가능함-->
+	
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate"
+	destroy-method="clearCache"> <!--destroy-method="clearCache" 임시 메모리 캐쉬를 비워서
+	데이터베이스 연결을 해제한다.  -->
+	  <constructor-arg name="sqlSessionFactory" ref="sqlSessionFactory" />
+	  <!-- 생성자를 통한 의존성 주입, ref 빈아이디를 호출. -->	
+	</bean>
+	
+	<context:component-scan base-package="net.daum.dao" />
+	<!-- net.daum.dao패키지에 설정된 @Repository 애노테이션이 설정된 모델 DAOImpl클래스를 스프링에서
+	자동으로 찾아서 등록해서 인식하게 함. -->
+	
+	<context:component-scan base-package="net.daum.service" />
+	<!-- 서비스 추가 목적 : 첫째, 컨트롤러와 모델 DAO 연결하는 중간 매개체 역할, 둘째는 고객의 추가 요금사항을 
+	 반영, 셋째는 스프링의 aop를 통한 트랜잭션 적용이 핵심(데이터의 불일치 현상을 제거=>일관성 유지)
+	 -->
+	 
+	 <aop:config /> <!-- AOP XML 환경설정 -->
 </beans>
