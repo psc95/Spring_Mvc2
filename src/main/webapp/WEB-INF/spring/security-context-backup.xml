@@ -7,8 +7,8 @@ xsi:schemaLocation="http://www.springframework.org/schema/security
 http://www.springframework.org/schema/security/spring-security.xsd
 http://www.springframework.org/schema/beans
 http://www.springframework.org/schema/beans/spring-beans.xsd">
-
-  <bean id="customAccessDenied" class="net.daum.security.CustomAccessDeniedHandler" />
+	
+	<bean id="customAccessDenied" class="net.daum.security.CustomAccessDeniedHandler" />
 	<!-- CustomAccessDeniedHandler 클래스의 빈아이디 객체명 customAccessDenied를 생성 -->
 	
 	<bean id="customLoginSuccess" class="net.daum.security.CustomLoginSuccessHandler" />
@@ -23,12 +23,8 @@ http://www.springframework.org/schema/beans/spring-beans.xsd">
          2.bcrypt는 태생 자체가 패스워드를 저장하는 용도로 설계된 것으로 특정 문자열을 암호화 한다.
            체크하는 쪽에서는 암호화 된 패스워드가 가능한 패스워드 인지만 확인하고 다시 원래 원문으로 되돌리지는 못한다.                   
    -->
-   
-   <bean id="customUserDetailsService"
-   	     class="net.daum.security.CustomUserDetailsService" />
-   	     <!-- 스프링 시큐리티 자동 로그인과 연관된 부분 -->
-   
-   <security:http> <!-- 스프링 시큐리티가 http 인터넷 웹(www)에서 알수 있게 하는 시작 시점을 설정 -->
+	
+	<security:http> <!-- 스프링 시큐리티가 http 인터넷 웹(www)에서 알수 있게 하는 시작 시점을 설정 -->
 		
 		<security:intercept-url pattern="/sample/all" access="permitAll" />
 		<!-- url 매핑주소에 접근할 때 인터셉터(가로채기:필터)을 이용해서 접근을 제한하는 설정은
@@ -57,26 +53,64 @@ http://www.springframework.org/schema/beans/spring-beans.xsd">
 		 <!-- 사용자 정의(커스텀) 로그인 페이지로 이동하는 매핑주소 /customLogin 등록
 		 authentication-success-handler-ref 속성은 로그인 성공시 빈아이디 customLoginSuccess
 		 를 호출-->
-		 
-		 <security:remember-me data-source-ref="dataSource"
-		 token-validity-seconds="604800" />
-		 <!-- remember-me는 시큐리티 자동로그인, token-validity-seconds 초단위 쿠키 유효시간 -->
 		
-		<security:logout logout-url="/customLogout" invalidate-session="true"
-		delete-cookies="remember-me" />
+		<security:logout logout-url="/customLogout" invalidate-session="true"/>
 		<!-- 로그아웃시 customLogout매핑주소가 실행됨. invalidate-session="true"는 로그아웃시
-			  세션 무효화 즉 로그아웃 처리,delete-cookies="remember-me" 자동로그인에서 사용하는 
-			  쿠키이름을 삭제-->
+			  세션 무효화 즉 로그아웃 처리-->
 		
 	</security:http>
 	
-	<security:authentication-manager> <!-- 인증관리자 -->
-	  <security:authentication-provider user-service-ref="customUserDetailsService"> 
-	  <!-- 시큐리티 인증 제공자에서 customUserDetailsService 빈아디를 호출 -->
-	  
+	<security:authentication-manager> <!-- 스프링 시큐리티 인증 관리자 -->
+	  <security:authentication-provider> <!-- 인증 제공자 -->
+	  	<security:user-service>
+			
+		   <security:user name="member" password="{noop}member"
+		   authorities="ROLE_MEMBER"/>
+		   <!-- 아이디가 member,비번이 member인 사용자는 로그인 인증 처리를 한다. {noop}는 비번을 인코딩
+		   		 즉 암호화 없이 처리 없이 사용한다. -->
+		   	  
+		   <security:user name="admin" password="{noop}admin"
+		   authorities="ROLE_MEMBER,ROLE_ADMIN" />
+		   <!-- 아이디가 admin, 비번이 admin인 사용자는 /sample/member 와/sample/admin에 모두
+		   		접근 가능하다. -->	  	
+		   	  	
+	  	</security:user-service>
+	  </security:authentication-provider>
+	</security:authentication-manager>
+	
+	<security:authentication-manager> <!-- 또 다른 인증관리자 -->
+	  <security:authentication-provider> <!-- 인증 제공자 -->
+	    <!--<security:jdbc-user-service data-source-ref="dataSource"/>
+	     root-context.xml에 설정된 빈아이디 dataSource를 호출하면서 오라클 DB를 연결함. -->	  
+	  	<!-- Spring Security 4에서는 메모리 내 인증을 사용하여 암호를 인코딩 즉 암호화 하지않고 
+       		  일반 텍스트로 저장할 수 있었다. Spring Security 5부터는 비번을 인코딩 즉
+    		  암호화 해서 저장한다. 그러므로  There is no PasswordEncoder mapped for the id “null” 
+    	 	  오류가 발생하면 비번을 암호화 해서 처리하면 된다. -->
+    	 	  
+		<!--<security:password-encoder ref="customPasswordEncoder"/>
+		 빈아이디 customPasswordEncoder를 호출해서 비번 암호화 함 -->
+		
 		<security:password-encoder ref="bcryptPasswordEncoder" />
-		<!-- 빈아이디 bcryptPasswordEncoder를 호출해서 비번 암호화 -->	  
-	  
+		<!-- 빈아이디 bcryptPasswordEncoder를 호출해서 비번 암호화 -->
+		
+		<security:jdbc-user-service data-source-ref="dataSource"
+                                    users-by-username-query=
+          "select userid,userpw,enabled from tbl_member where userid=?"
+                                    authorities-by-username-query=
+          "select userid,auth from tbl_member_auth where userid=?"/>
+		
 	  </security:authentication-provider>
 	</security:authentication-manager>
 </beans>
+
+
+
+
+
+
+
+
+
+
+	
+	

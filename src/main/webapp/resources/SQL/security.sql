@@ -57,6 +57,18 @@ create table users(
    select * from tbl_member_auth order by userid;
    
    commit;
+   
+   --스프링 시큐리티 자동로그인 정보를 유지하는 테이블 => 스프링 부트+JPA+시큐리티에서도 동일하게 사용되는 테이블
+   create table persistent_logins(
+    username varchar2(64) not null --회원아이디
+    ,series varchar2(64) primary key --비번
+    ,token varchar2(64) not null --토큰 정보
+    ,last_used timestamp not null --로그인 한 날짜 시간
+    );
+    
+    select * from persistent_logins;
+    
+    commit;
   
   
   

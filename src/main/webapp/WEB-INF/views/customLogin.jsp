@@ -40,6 +40,11 @@
     	   <%-- 스프링 시큐리티에서는 로그인 비번 네임피라미터 이름은 password로 해야한다. --%>
   </div>
   
+  <div>>
+    <input type="checkbox" name="remember-me" >Remember Me
+  </div> <%-- 자동로그인 기능 => 스프링 시큐리티에서는 관례적으로 자동로그인에서는 네임피라미터 이름을
+  			  remember-me로 사용한다.  --%>
+  
   <div>
     <input type="submit" value="Login" >
   </div>
